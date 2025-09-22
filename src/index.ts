@@ -6,13 +6,20 @@ import cors from "cors";
 import chatRoutes from "./routes/chat";
 import actionPlanRoutes from "./routes/actionPlanRoutes";
 import bodyParser from "body-parser";
+import ENVIRONMENT from "./utils/environment";
 
 const app = express();
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:8080";
+
 
 app.use(
   cors({
-    origin: CLIENT_ORIGIN, 
+    origin: (origin, callback) => {
+      if (origin && ENVIRONMENT.ALLOWED_ORIGINS.indexOf(origin) !== -1) {
+        callback(null, true); // Allow the request
+      } else {
+        callback(new Error(`Origin -${origin}Not allowed by CORS`)); // Reject the request
+      } }
+    ,
     methods: ["GET", "POST"],
     credentials: true,
   })
