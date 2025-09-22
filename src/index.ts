@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
 import chatRoutes from "./routes/chat";
@@ -5,11 +8,11 @@ import actionPlanRoutes from "./routes/actionPlanRoutes";
 import bodyParser from "body-parser";
 
 const app = express();
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:8080"; // Default to localhost:8080 if not set
-// ✅ Enable CORS for FE (React on port 3000)
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:8080";
+
 app.use(
   cors({
-    origin: CLIENT_ORIGIN, // adjust for production later
+    origin: CLIENT_ORIGIN, 
     methods: ["GET", "POST"],
     credentials: true,
   })
