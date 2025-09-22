@@ -5,7 +5,7 @@ import actionPlanRoutes from "./routes/actionPlanRoutes";
 import bodyParser from "body-parser";
 
 const app = express();
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN 
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:8080"; // Default to localhost:8080 if not set
 // ✅ Enable CORS for FE (React on port 3000)
 app.use(
   cors({
