@@ -14,12 +14,16 @@ const app = express();
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (origin && ENVIRONMENT.ALLOWED_ORIGINS?.includes(origin)) {
+      if (!origin) {
+        // Allow non-browser requests like Postman
+        return callback(null, true);
+      }
+      if (ENVIRONMENT.ALLOWED_ORIGINS.includes(origin)) {
         callback(null, true); // Allow the request
       } else {
-        callback(new Error(`Origin -${origin}Not allowed by CORS`)); // Reject the request
-      } }
-    ,
+        callback(new Error(`Origin ${origin} not allowed by CORS`)); // Reject the request
+      }
+    },
     methods: ["GET", "POST"],
     credentials: true,
   })
