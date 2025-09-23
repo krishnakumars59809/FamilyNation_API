@@ -7,7 +7,9 @@ const ENVIRONMENT = {
           "http://localhost:8080",
           "http://localhost:5173",
         ]
-      : [process.env.CLIENT_ORIGIN], // wrap in array
+      : (process.env.CLIENT_ORIGIN || "")
+          .split(",")
+          .map((origin) => origin.trim()), // ✅ split and trim
 };
 
 export default ENVIRONMENT;
