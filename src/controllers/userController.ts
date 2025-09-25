@@ -89,7 +89,7 @@ export const loginUser = async (req: Request, res: Response) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: `"Server error" - ${err}` });
   }
 };
 
@@ -105,7 +105,7 @@ export const getCurrentUser = async (req: Request, res: Response) => {
 
     res.json(getUser);
   } catch (err) {
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: `"Server error" - ${err}` });
   }
 };
 
