@@ -9,7 +9,7 @@ const familyMemberSchema = new mongoose.Schema(
       enum: RELATION,
       default: "other",
     },
-    dob: { type: Date },
+    age: { type: Number },
     email: { type: String },
     phone: { type: String },
     needs: [{ type: String }], // e.g. ["learning-impairment", "substance-use"]
