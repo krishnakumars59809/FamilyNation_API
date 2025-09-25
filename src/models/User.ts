@@ -4,7 +4,7 @@ import { RELATION } from "../constants/relationships";
 const familyMemberSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    relation: {
+    relationship: {
       type: String,
       enum: RELATION,
       default: "other",
