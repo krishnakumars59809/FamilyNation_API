@@ -1,0 +1,21 @@
+export const RELATION =[
+    "husband",
+    "wife",
+    "partner",
+    "son",
+    "daughter",
+    "father",
+    "mother",
+    "brother",
+    "sister",
+    "grandfather",
+    "grandmother",
+    "grandson",
+    "granddaughter",
+    "uncle",
+    "aunt",
+    "cousin",
+    "nephew",
+    "niece",
+    "other"
+  ]
