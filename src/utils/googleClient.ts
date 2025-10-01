@@ -1,29 +1,63 @@
 import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
+import { SpeechClient } from "@google-cloud/speech";
 
-// Parse service account key from env variable
-const credentials = JSON.parse(process.env.GCP_SERVICE_KEY!);
-console.log("kk credentials", credentials);
-// Create client with credentials
-const client = new SecretManagerServiceClient({
-  credentials,
-  projectId: credentials.project_id,
+const secretClient = new SecretManagerServiceClient({
+  credentials: {
+    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(
+      /\\n/g,
+      "\n"
+    ),
+  },
+  projectId: process.env.GOOGLE_PROJECT_ID,
 });
 
-// Access secret
-async function accessSecret(secretName: string) {
+async function getServiceAccountFromSecret(secretName: string) {
   try {
-    const name = `projects/${credentials.project_id}/secrets/${secretName}/versions/latest`;
-    const [version] = await client.accessSecretVersion({ name });
-    const secretPayload = version.payload?.data?.toString() || '';
-    console.log(`Secret value: ${secretPayload}`);
-    return secretPayload;
-  } catch (err) {
-    console.error('Error accessing secret:', err);
+    const [version] = await secretClient.accessSecretVersion({
+      name: secretName,
+    });
+
+    if (!version.payload?.data) throw new Error("Secret payload is empty");
+
+    const creds = JSON.parse(version.payload.data.toString());
+
+    // Fix private key formatting
+    creds.private_key = creds.private_key.replace(/\\n/g, "\n").trim();
+
+    console.log("✅ Secret fetched successfully");
+    return creds;
+  } catch (err: any) {
+    console.error(
+      "❌ Failed to fetch secret or invalid key:",
+      err.message || err
+    );
+    throw err;
   }
 }
 
-// Example usage
-(async () => {
-  const mySecret = await accessSecret('familynation');
-    console.log('Retrieved secret:', mySecret);
-})();
+export async function createSpeechClient() {
+  const project_id = process.env.GOOGLE_PROJECT_ID;
+  const project_secrets_version =
+    process.env.GOOGLE_PROJECT_SECRETS_VERSION || "latest";
+  if (!project_id)
+    throw new Error("Missing GOOGLE_PROJECT_ID in environment variables");
+  if (!project_secrets_version)
+    throw new Error(
+      "Missing GOOGLE_PROJECT_SECRETS_VERSION in environment variables"
+    );
+  const secretCreds = await getServiceAccountFromSecret(
+    `projects/${project_id}/secrets/familyNation/versions/${project_secrets_version}`
+  );
+
+  const client = new SpeechClient({
+    credentials: {
+      client_email: secretCreds.client_email,
+      private_key: secretCreds.private_key,
+    },
+    projectId: secretCreds.project_id,
+  });
+
+  console.log("✅ Speech client created successfully");
+  return client;
+}

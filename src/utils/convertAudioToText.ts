@@ -1,13 +1,12 @@
 import fs from "fs";
-import { SpeechClient } from "@google-cloud/speech";
-
-const client: SpeechClient  = new SpeechClient();
+import { createSpeechClient } from "./googleClient";
 
 export const convertAudioToText = async (audioPath: string) => {
   try {
-    if (!audioPath || !fs.existsSync(audioPath)) {
-      throw new Error("No audio file uploaded or file does not exist");
-    }
+    if (!audioPath || !fs.existsSync(audioPath))
+      throw new Error("Audio file not found");
+
+    const client = await createSpeechClient();
 
     const file = fs.readFileSync(audioPath);
     const audioBytes = file.toString("base64");
@@ -19,30 +18,21 @@ export const convertAudioToText = async (audioPath: string) => {
       languageCode: "en-US",
     };
 
-    const [response] = await client.recognize({
-      audio,
-      config,
-    });
+    const [response] = await client.recognize({ audio, config });
 
     const transcription = response.results
       ?.map((r) => r.alternatives?.[0]?.transcript)
       .join("\n");
 
-    console.log("Transcription:", transcription);
+    console.log("📝 Transcription:", transcription);
 
-    // Clean up the temporary file
-    if (fs.existsSync(audioPath)) {
-      fs.unlinkSync(audioPath);
-    }
+    // Cleanup
+    fs.existsSync(audioPath) && fs.unlinkSync(audioPath);
 
     return transcription;
-  } catch (error: any) {
-    // Clean up file even if error occurs
-    if (audioPath && fs.existsSync(audioPath)) {
-      fs.unlinkSync(audioPath);
-    }
-
-    console.error("Google STT error:", error.message);
+  } catch (err: any) {
+    fs.existsSync(audioPath) && fs.unlinkSync(audioPath);
+    console.error("❌ Google STT error:", err?.message || err);
     throw new Error("Failed to transcribe audio");
   }
 };
