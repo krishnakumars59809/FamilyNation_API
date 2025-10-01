@@ -1,69 +1,80 @@
-import { createSign } from "crypto";
-
 export const convertAudioToText = async (buffer: Buffer) => {
   try {
-    console.log("🔧 Using simplified approach...");
-
-    const audioBytes = buffer.toString("base64");
-    const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY!.replace(/\\n/g, '\n');
-    const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL!;
-
-    // Create JWT manually
-    const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
-    const payload = Buffer.from(JSON.stringify({
-      iss: clientEmail,
-      scope: 'https://www.googleapis.com/auth/cloud-platform',
-      aud: 'https://oauth2.googleapis.com/token',
-      exp: Math.floor(Date.now() / 1000) + 3600,
-      iat: Math.floor(Date.now() / 1000)
-    })).toString('base64url');
-
-    const dataToSign = `${header}.${payload}`;
-    
-    const sign = createSign('RSA-SHA256');
-    sign.update(dataToSign);
-    
-    let formattedKey = privateKey;
-    if (!formattedKey.includes('BEGIN PRIVATE KEY')) {
-      formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----`;
-    }
-
-    const signature = sign.sign(formattedKey, 'base64url');
-    const jwt = `${dataToSign}.${signature}`;
-
-    // Get access token
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
+    console.log("🎵 Audio Buffer Info:", {
+      environment: 'Vercel',
+      bufferLength: buffer.length,
+      fileSignature: buffer.slice(0, 4).toString('hex')
     });
 
-    const { access_token } = await tokenResponse.json();
+    const audioBytes = buffer.toString("base64");
+    
+    // Get access token using service account
+    const accessToken = await getAccessToken();
+    
+    console.log("✅ Got access token, calling Speech-to-Text API...");
 
-    // Call STT API
-    const sttResponse = await fetch('https://speech.googleapis.com/v1/speech:recognize', {
+    const response = await fetch('https://speech.googleapis.com/v1/speech:recognize', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${access_token}`,
+        'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        config: { encoding: "MP3", sampleRateHertz: 16000, languageCode: "en-US" },
-        audio: { content: audioBytes }
+        config: {
+          encoding: "MP3",
+          sampleRateHertz: 16000,
+          languageCode: "en-US",
+        },
+        audio: {
+          content: audioBytes,
+        },
       }),
     });
 
-    const sttData = await sttResponse.json();
-    const transcription = sttData.results
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`Google STT API error: ${response.status} - ${errorData}`);
+    }
+
+    const data = await response.json();
+    
+    const transcription = data.results
       ?.map((r: any) => r.alternatives?.[0]?.transcript)
       .filter(Boolean)
       .join("\n");
 
-    console.log("✅ Transcription:", transcription);
+    console.log("✅ Service Account Transcription successful:", transcription);
     return transcription;
 
   } catch (err: any) {
-    console.error("❌ Error:", err.message);
+    console.error("❌ Service Account approach error:", err.message);
     throw new Error(`Failed to transcribe audio: ${err.message}`);
   }
 };
+
+async function getAccessToken(): Promise<string> {
+  try {
+    // Correct import for google-auth-library
+    const { GoogleAuth } = await import('google-auth-library');
+    
+    const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY!.replace(/\\n/g, '\n');
+    const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL!;
+
+    const auth = new GoogleAuth({
+      credentials: {
+        client_email: clientEmail,
+        private_key: privateKey,
+      },
+      scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    });
+
+    const client = await auth.getClient();
+    const tokenResponse = await client.getAccessToken();
+    
+    return tokenResponse.token!;
+    
+  } catch (error: any) {
+    console.error("❌ Failed to get access token:", error.message);
+    throw error;
+  }
+}
