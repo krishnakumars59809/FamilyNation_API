@@ -12,9 +12,8 @@ const sessions: Record<string, Session> = {};
 // ===============================
 // Multer config for file uploads
 // ===============================
-const upload = multer({ dest: path.join(__dirname, "../../uploads/") });
+const upload = multer({ storage: multer.memoryStorage() });
 export const voiceUpload = upload.single("voice");
-
 export const startChat = (req: Request, res: Response) => {
   const sessionId = Date.now().toString();
   sessions[sessionId] = { index: 0, responses: [] };
@@ -77,11 +76,10 @@ const generatePredictionMessage = (prediction: PredictionResult): string => {
 };
 
 export const transcribeAudio = async (req: Request, res: Response) => {
-  if (!req.file)
-    return res.status(400).json({ error: `"No audio file provided" - ${req}` });
+  if (!req.file || !req.file.buffer)
+    return res.status(400).json({ error: "No audio file uploaded" });
 
   try {
-    
     const text = await convertAudioToText(req.file.buffer);
     res.json({ text });
   } catch (error: any) {
