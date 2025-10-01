@@ -80,18 +80,14 @@ export const transcribeAudio = async (req: Request, res: Response) => {
   if (!req.file)
     return res.status(400).json({ error: `"No audio file provided" - ${req}` });
 
-  const audioPath = req.file.path;
-
   try {
-    // 1. Convert audio to text
-    const text = await convertAudioToText(audioPath);
+    
+    const text = await convertAudioToText(req.file.buffer);
     res.json({ text });
   } catch (error: any) {
     console.error("Error in transcribing audio:", error.message || error);
     res
       .status(500)
       .json({ error: `Internal server error - ${error.message || error}` });
-  } finally {
-
   }
 };

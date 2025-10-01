@@ -1,4 +1,3 @@
-// server/routes/hazelRoutes.ts
 import { Router } from "express";
 import {
   replyChat,
@@ -8,11 +7,10 @@ import {
 import multer from "multer";
 
 const router = Router();
+
+// Memory storage for serverless environments
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => cb(null, "uploads/"), // make sure this folder exists
-    filename: (req, file, cb) => cb(null, Date.now() + "_" + file.originalname),
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
 });
 
