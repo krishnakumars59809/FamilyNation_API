@@ -1,89 +1,69 @@
-import { SignJWT } from 'jose';
-import { createPrivateKey } from 'crypto';
+import { createSign } from "crypto";
 
 export const convertAudioToText = async (buffer: Buffer) => {
   try {
-    console.log("🎵 Audio Buffer Info:", {
-      environment: 'Vercel',
-      bufferLength: buffer.length,
-      fileSignature: buffer.slice(0, 4).toString('hex')
-    });
+    console.log("🔧 Using simplified approach...");
 
     const audioBytes = buffer.toString("base64");
-    
-    // Create JWT token manually
-    const privateKey = createPrivateKey({
-      key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY!.replace(/\\n/g, '\n'),
-      format: 'pem'
-    });
+    const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY!.replace(/\\n/g, '\n');
+    const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL!;
 
-    const now = Math.floor(Date.now() / 1000);
-    
-    const jwt = await new SignJWT({
+    // Create JWT manually
+    const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
+    const payload = Buffer.from(JSON.stringify({
+      iss: clientEmail,
       scope: 'https://www.googleapis.com/auth/cloud-platform',
-    })
-      .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
-      .setIssuer(process.env.GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL!)
-      .setAudience('https://oauth2.googleapis.com/token')
-      .setIssuedAt()
-      .setExpirationTime(now + 3600)
-      .sign(privateKey);
+      aud: 'https://oauth2.googleapis.com/token',
+      exp: Math.floor(Date.now() / 1000) + 3600,
+      iat: Math.floor(Date.now() / 1000)
+    })).toString('base64url');
+
+    const dataToSign = `${header}.${payload}`;
+    
+    const sign = createSign('RSA-SHA256');
+    sign.update(dataToSign);
+    
+    let formattedKey = privateKey;
+    if (!formattedKey.includes('BEGIN PRIVATE KEY')) {
+      formattedKey = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----`;
+    }
+
+    const signature = sign.sign(formattedKey, 'base64url');
+    const jwt = `${dataToSign}.${signature}`;
 
     // Get access token
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-        assertion: jwt,
-      }),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
     });
 
-    const tokenData = await tokenResponse.json();
-    
-    if (!tokenResponse.ok) {
-      throw new Error(`Token error: ${tokenData.error}`);
-    }
+    const { access_token } = await tokenResponse.json();
 
-    const accessToken = tokenData.access_token;
-
-    // Call Speech-to-Text API directly
+    // Call STT API
     const sttResponse = await fetch('https://speech.googleapis.com/v1/speech:recognize', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        'Authorization': `Bearer ${access_token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        config: {
-          encoding: "MP3",
-          sampleRateHertz: 16000,
-          languageCode: "en-US",
-        },
-        audio: {
-          content: audioBytes,
-        },
+        config: { encoding: "MP3", sampleRateHertz: 16000, languageCode: "en-US" },
+        audio: { content: audioBytes }
       }),
     });
 
     const sttData = await sttResponse.json();
-    
-    if (!sttResponse.ok) {
-      throw new Error(`STT API error: ${sttData.error?.message || JSON.stringify(sttData)}`);
-    }
-
     const transcription = sttData.results
       ?.map((r: any) => r.alternatives?.[0]?.transcript)
       .filter(Boolean)
       .join("\n");
 
-    console.log("✅ Manual API Transcription successful:", transcription);
+    console.log("✅ Transcription:", transcription);
     return transcription;
 
   } catch (err: any) {
-    console.error("❌ Manual API error:", err.message);
+    console.error("❌ Error:", err.message);
     throw new Error(`Failed to transcribe audio: ${err.message}`);
   }
 };
