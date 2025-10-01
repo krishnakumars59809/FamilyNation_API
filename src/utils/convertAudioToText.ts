@@ -21,7 +21,7 @@ export const convertAudioToText = async (audioPath: string) => {
     const [response] = await client.recognize({ audio, config });
 
     const transcription = response.results
-      ?.map((r) => r.alternatives?.[0]?.transcript)
+      ?.map((r:any) => r.alternatives?.[0]?.transcript)
       .join("\n");
 
     console.log("📝 Transcription:", transcription);

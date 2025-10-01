@@ -5,21 +5,9 @@ import { analyzeResponses, PredictionResult } from "../utils/predictionService";
 import fs from "fs";
 import path from "path";
 import multer from "multer";
-import { pipeline } from "@xenova/transformers";
 import { convertAudioToText } from "../utils/convertAudioToText";
 
 const sessions: Record<string, Session> = {};
-
-// ===============================
-// Whisper STT Pipeline
-// ===============================
-let transcriber: any;
-(async () => {
-  transcriber = await pipeline(
-    "automatic-speech-recognition",
-    "Xenova/whisper-base"
-  );
-})();
 
 // ===============================
 // Multer config for file uploads
