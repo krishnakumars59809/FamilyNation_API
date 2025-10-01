@@ -104,9 +104,6 @@ export const transcribeAudio = async (req: Request, res: Response) => {
       .status(500)
       .json({ error: `Internal server error - ${error.message || error}` });
   } finally {
-    // Delete temporary audio file
-    fs.unlink(audioPath, (err) => {
-      if (err) console.error("Failed to delete audio file:", err);
-    });
+
   }
 };

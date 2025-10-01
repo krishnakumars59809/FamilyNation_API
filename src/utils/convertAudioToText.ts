@@ -1,6 +1,7 @@
 import fs from "fs";
 import { SpeechClient } from "@google-cloud/speech";
-const client: SpeechClient = new SpeechClient();
+
+const client: SpeechClient  = new SpeechClient();
 
 export const convertAudioToText = async (audioPath: string) => {
   try {
