@@ -8,10 +8,10 @@ const serviceAccount = JSON.parse(
 export async function createSpeechClient() {
   const client = new SpeechClient({
     credentials: {
-      client_email: serviceAccount.client_email,
-      private_key: serviceAccount.private_key,
+      client_email: serviceAccount?.client_email,
+      private_key: serviceAccount?.private_key,
     },
-    projectId: serviceAccount.project_id,
+    projectId: serviceAccount?.project_id,
   });
 
   console.log("✅ Speech client created successfully");
