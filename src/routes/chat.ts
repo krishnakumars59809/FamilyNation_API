@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   replyChat,
   startChat,
+  textToAudio,
   transcribeAudio,
 } from "../controllers/chatController";
 import multer from "multer";
@@ -21,5 +22,6 @@ router.post("/start", startChat);
 router.post("/reply", replyChat);
 
 router.post("/transcribe", upload.single("audio"), transcribeAudio);
+router.post("/textToAudio", textToAudio);
 
 export default router;

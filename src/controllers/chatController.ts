@@ -6,6 +6,7 @@ import fs from "fs";
 import path from "path";
 import multer from "multer";
 import { convertAudioToText } from "../utils/convertAudioToText";
+import { convertTextToAudio } from "../utils/convertTextToAudio";
 
 const sessions: Record<string, Session> = {};
 
@@ -87,5 +88,29 @@ export const transcribeAudio = async (req: Request, res: Response) => {
     res
       .status(500)
       .json({ error: `Internal server error - ${error.message || error}` });
+  }
+};
+
+export const textToAudio = async (req: Request, res: Response) => {
+  try {
+    const { text } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: "Text is required" });
+    }
+
+    const audioBuffer = await convertTextToAudio(text, "en-US");
+
+    // Send audio as response (downloadable MP3)
+    res.set({
+      "Content-Type": "audio/mpeg",
+      "Content-Disposition": "attachment; filename=output.mp3",
+    });
+
+    res.json({
+      audio: audioBuffer.toString("base64"),
+    });
+  } catch (err) {
+    res.status(500).json({ error: "TTS failed" });
   }
 };

@@ -1,19 +1,22 @@
 import { SpeechClient } from "@google-cloud/speech";
+import textToSpeech from "@google-cloud/text-to-speech";
 
-// Decode Base64 string
 const serviceAccount = JSON.parse(
   Buffer.from(process.env.BASE64_ENCODED_SERVICE_ACCOUNT!, "base64").toString("utf-8")
 );
 
-export async function createSpeechClient() {
-  const client = new SpeechClient({
-    credentials: {
-      client_email: serviceAccount?.client_email,
-      private_key: serviceAccount?.private_key,
-    },
-    projectId: serviceAccount?.project_id,
-  });
+const credentials = {
+  client_email: serviceAccount?.client_email,
+  private_key: serviceAccount?.private_key,
+};
+const projectId = serviceAccount?.project_id;
 
-  console.log("✅ Speech client created successfully");
-  return client;
+// STT Client
+export function createSpeechClient() {
+  return new SpeechClient({ credentials, projectId });
+}
+
+// TTS Client
+export function createTextToSpeechClient() {
+  return new textToSpeech.TextToSpeechClient({ credentials, projectId });
 }
