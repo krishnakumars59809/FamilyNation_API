@@ -1,15 +1,26 @@
 // server/controllers/actionPlanController.ts
 import { Request, Response } from "express";
 
+type Availability = "Morning" | "Afternoon" | "Evening";
+type Mode = "Online" | "In-person";
+type Gender = "Male" | "Female";
+type Cost = "Low" | "Medium" | "Expensive";
+
 interface Professional {
+  id: number;
   name: string;
-  title: string;
-  specialty: string;
+  specialization: string;
+  availability: Availability;
+  mode: Mode;
+  gender: Gender;
+  cost: Cost;
+  weekendAvailable: boolean;
   rating: number;
-  distance: string;
-  availability: string;
-  phone: string;
-  reason: string;
+  // Optional fields
+  phone?: string;
+  reason?: string;
+  title?: string;
+  specialty?: string;
 }
 
 export const getRecommendedProfessionals = (req: Request, res: Response) => {
@@ -24,34 +35,224 @@ export const getRecommendedProfessionals = (req: Request, res: Response) => {
 
   const professionals: Professional[] = [
     {
-      name: "Dr. Sarah Chen",
-      title: "Licensed Clinical Social Worker",
-      specialty: "Family Crisis Intervention",
-      rating: 4.9,
-      distance: "2.3 miles",
-      availability: "Available today",
-      phone: "(555) 123-4567",
-      reason: "Specializes in urgent family conflicts with 15+ years experience",
-    },
-    {
-      name: "Michael Rodriguez, LMFT",
-      title: "Licensed Marriage & Family Therapist",
-      specialty: "Crisis Counseling",
-      rating: 4.8,
-      distance: "3.1 miles",
-      availability: "Next appointment: Tomorrow 10 AM",
-      phone: "(555) 234-5678",
-      reason: "Expert in crisis de-escalation and immediate intervention strategies",
-    },
-    {
-      name: "Crisis Support Center",
-      title: "Community Mental Health Center",
-      specialty: "24/7 Crisis Support",
+      id: 1,
+      name: "Dr. Asha Menon",
+      specialization: "CBT",
+      availability: "Evening",
+      mode: "In-person",
+      gender: "Female",
+      cost: "Low",
+      weekendAvailable: true,
       rating: 4.7,
-      distance: "4.5 miles",
-      availability: "Walk-ins accepted",
-      phone: "(555) 345-6789",
-      reason: "Immediate access to crisis counselors and emergency support services",
+    },
+    {
+      id: 2,
+      name: "Dr. Rohani Iyer",
+      specialization: "Psychiatry",
+      availability: "Evening",
+      mode: "Online",
+      gender: "Female",
+      cost: "Medium",
+      weekendAvailable: false,
+      rating: 4.6,
+    },
+    {
+      id: 3,
+      name: "Dr. Priyan Kapoor",
+      specialization: "Family Therapy",
+      availability: "Evening",
+      mode: "In-person",
+      gender: "Male",
+      cost: "Expensive",
+      weekendAvailable: true,
+      rating: 4.0,
+    },
+    {
+      id: 4,
+      name: "Dr. kalyan kalwa",
+      specialization: "Addiction Counseling",
+      availability: "Morning",
+      mode: "In-person",
+      gender: "Male",
+      cost: "Low",
+      weekendAvailable: true,
+      rating: 4.0,
+    },
+    {
+      id: 5,
+      name: "Dr. Meera Joshi",
+      specialization: "Trauma Therapy",
+      availability: "Afternoon",
+      mode: "In-person",
+      gender: "Female",
+      cost: "Expensive",
+      weekendAvailable: true,
+      rating: 5.0,
+    },
+    {
+      id: 6,
+      name: "Dr. Nikhi Deshmukh",
+      specialization: "Child Psychology",
+      availability: "Afternoon",
+      mode: "In-person",
+      gender: "Female",
+      cost: "Medium",
+      weekendAvailable: true,
+      rating: 4.9,
+    },
+    {
+      id: 7,
+      name: "Dr. Kavit Suresh",
+      specialization: "Marriage Counseling",
+      availability: "Afternoon",
+      mode: "Online",
+      gender: "Male",
+      cost: "Expensive",
+      weekendAvailable: false,
+      rating: 4.7,
+    },
+    {
+      id: 8,
+      name: "Dr. Sanjana Rao",
+      specialization: "Clinical Psychology",
+      availability: "Evening",
+      mode: "Online",
+      gender: "Female",
+      cost: "Medium",
+      weekendAvailable: true,
+      rating: 4.8,
+    },
+    {
+      id: 9,
+      name: "Dr. Leena Fernandez",
+      specialization: "Behavioral Therapy",
+      availability: "Evening",
+      mode: "Online",
+      gender: "Female",
+      cost: "Expensive",
+      weekendAvailable: true,
+      rating: 4.4,
+    },
+    {
+      id: 10,
+      name: "Dr. Arjun Malhotra",
+      specialization: "Depression & Anxiety",
+      availability: "Afternoon",
+      mode: "In-person",
+      gender: "Female",
+      cost: "Expensive",
+      weekendAvailable: true,
+      rating: 4.4,
+    },
+    {
+      id: 11,
+      name: "Dr. Sneha Pillai",
+      specialization: "Mindfulness Therapy",
+      availability: "Morning",
+      mode: "In-person",
+      gender: "Female",
+      cost: "Medium",
+      weekendAvailable: true,
+      rating: 4.3,
+    },
+    {
+      id: 12,
+      name: "Dr. Varun Gupta",
+      specialization: "Bipolar Disorder",
+      availability: "Morning",
+      mode: "Online",
+      gender: "Female",
+      cost: "Expensive",
+      weekendAvailable: false,
+      rating: 4.2,
+    },
+    {
+      id: 13,
+      name: "Dr. Anit Singh",
+      specialization: "PTSD Counseling",
+      availability: "Evening",
+      mode: "In-person",
+      gender: "Male",
+      cost: "Low",
+      weekendAvailable: false,
+      rating: 4.2,
+    },
+    {
+      id: 14,
+      name: "Dr. Mohan Reddy",
+      specialization: "Substance Abuse",
+      availability: "Evening",
+      mode: "In-person",
+      gender: "Male",
+      cost: "Low",
+      weekendAvailable: true,
+      rating: 4.6,
+    },
+    {
+      id: 15,
+      name: "Dr. Pooja Verma",
+      specialization: "Adolescent Therapy",
+      availability: "Afternoon",
+      mode: "Online",
+      gender: "Female",
+      cost: "Medium",
+      weekendAvailable: false,
+      rating: 5.0,
+    },
+    {
+      id: 16,
+      name: "Dr. Rakesh Nair",
+      specialization: "Geriatric Counseling",
+      availability: "Morning",
+      mode: "Online",
+      gender: "Male",
+      cost: "Expensive",
+      weekendAvailable: true,
+      rating: 4.0,
+    },
+    {
+      id: 17,
+      name: "Dr. Nisha Jain",
+      specialization: "Behavioral Medicine",
+      availability: "Afternoon",
+      mode: "Online",
+      gender: "Female",
+      cost: "Low",
+      weekendAvailable: true,
+      rating: 4.1,
+    },
+    {
+      id: 18,
+      name: "Dr. Rajesh Patel",
+      specialization: "Stress Management",
+      availability: "Evening",
+      mode: "Online",
+      gender: "Male",
+      cost: "Medium",
+      weekendAvailable: true,
+      rating: 4.1,
+    },
+    {
+      id: 19,
+      name: "Dr. Shalini Narang",
+      specialization: "Trauma & Resilience Therapy",
+      availability: "Afternoon",
+      mode: "Online",
+      gender: "Female",
+      cost: "Expensive",
+      weekendAvailable: true,
+      rating: 4.2,
+    },
+    {
+      id: 20,
+      name: "Dr. Manish Tiwari",
+      specialization: "Personality Disorders",
+      availability: "Evening",
+      mode: "In-person",
+      gender: "Male",
+      cost: "Low",
+      weekendAvailable: false,
+      rating: 4.2,
     },
   ];
 
