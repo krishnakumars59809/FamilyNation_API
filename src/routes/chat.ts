@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  chat,
   replyChat,
   startChat,
   textToAudio,
@@ -23,5 +24,6 @@ router.post("/reply", replyChat);
 
 router.post("/transcribe", upload.single("audio"), transcribeAudio);
 router.post("/textToAudio", textToAudio);
+router.post("/chat", chat);
 
 export default router;
