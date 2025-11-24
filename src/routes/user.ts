@@ -11,15 +11,15 @@ import {
   registerUser,
   loginUser,
   getCurrentUser,
+  getFamilyMembersByUserId,
 } from "../controllers/userController";
 import { authenticate, authorize } from "../middlewares/authMiddleware";
-
 
 const router = Router();
 
 // ===== Public routes =====
 router.post("/auth/register", registerUser); // Normal user registration
-router.post("/auth/login", loginUser);      // Login
+router.post("/auth/login", loginUser); // Login
 router.get("/auth/me", authenticate, getCurrentUser); // Get current user info
 
 // ===== Admin CRUD =====
@@ -32,8 +32,29 @@ router.delete("/:id", authenticate, authorize(["admin"]), deleteUser);
 
 // ===== Family member routes =====
 // Normal users can manage their own family
-router.post("/:id/family", authenticate, authorize(["user", "admin"]), addFamilyMember);
-router.put("/:id/family/:memberId", authenticate, authorize(["user", "admin"]), updateFamilyMember);
-router.delete("/:id/family/:memberId", authenticate, authorize(["user", "admin"]), deleteFamilyMember);
+router.post(
+  "/:id/family",
+  authenticate,
+  authorize(["user", "admin"]),
+  addFamilyMember,
+);
+router.put(
+  "/:id/family/:memberId",
+  authenticate,
+  authorize(["user", "admin"]),
+  updateFamilyMember,
+);
+router.delete(
+  "/:id/family/:memberId",
+  authenticate,
+  authorize(["user", "admin"]),
+  deleteFamilyMember,
+);
+router.get(
+  "/:id/family",
+  authenticate,
+  authorize(["user", "admin"]),
+  getFamilyMembersByUserId,
+);
 
 export default router;
