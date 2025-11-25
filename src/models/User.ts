@@ -6,32 +6,33 @@ const familyMemberSchema = new mongoose.Schema(
     name: { type: String, required: true },
     relationship: {
       type: String,
-      enum: RELATION,
+      // enum: RELATION,
       default: "other",
     },
-    age: { type: Number },
+    age: { type: String },
+    gender: { type: String },
     email: { type: String },
     phone: { type: String },
     needs: [{ type: String }], // e.g. ["learning-impairment", "substance-use"]
     isPrimaryContact: { type: Boolean, default: false },
   },
-  { _id: true }
+  { _id: true },
 );
 
 const userSchema = new mongoose.Schema(
   {
-    firstName:{ type:String ,required: true },
+    firstName: { type: String, required: true },
     lastName: String,
-    email: { type: String, unique: true ,required: true },
+    email: { type: String, unique: true, required: true },
     phone: { type: String },
     passwordHash: { type: String, required: true }, // store hashed password
     dateOfBirth: Date,
     // role: { type: String, enum: ["user", "admin"], default: "user" },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     family: [familyMemberSchema],
-    familyId: { type: String, unique: true }, 
+    familyId: { type: String, unique: true },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("User", userSchema);

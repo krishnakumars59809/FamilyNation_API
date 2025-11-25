@@ -3,7 +3,8 @@ import jwt from "jsonwebtoken";
 import User from "../models/User";
 import { Request, Response } from "express";
 import { generateFamilyId } from "../utils/generateFamilyId";
-
+import { decrypt, encrypt, safeDecrypt } from "../utils/crypto";
+import { FamilyMember } from "../types/user";
 
 // ============================
 // Create a new user
@@ -11,12 +12,15 @@ import { generateFamilyId } from "../utils/generateFamilyId";
 
 export const registerUser = async (req: Request, res: Response) => {
   try {
-    const { firstName, lastName, email, phone, password, dateOfBirth } = req.body;
+    const { firstName, lastName, email, phone, password, dateOfBirth } =
+      req.body;
 
-    if (!password) return res.status(400).json({ error: "Password is required" });
+    if (!password)
+      return res.status(400).json({ error: "Password is required" });
 
     const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ error: "Email already exists" });
+    if (existing)
+      return res.status(400).json({ error: "Email already exists" });
 
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
@@ -38,7 +42,7 @@ export const registerUser = async (req: Request, res: Response) => {
     const token = jwt.sign(
       { id: user._id, email: user.email, role: user.role, familyId },
       process.env.JWT_SECRET || "secret",
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
 
     res.status(201).json({
@@ -58,7 +62,6 @@ export const registerUser = async (req: Request, res: Response) => {
   }
 };
 
-
 // ============================
 // Login
 // ============================
@@ -73,9 +76,9 @@ export const loginUser = async (req: Request, res: Response) => {
     if (!isMatch) return res.status(400).json({ error: "Password Wrong" });
 
     const token = jwt.sign(
-      { id: user._id, email: user.email,role: user.role },
+      { id: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET || "secret",
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
 
     res.json({
@@ -109,10 +112,10 @@ export const getCurrentUser = async (req: Request, res: Response) => {
   }
 };
 
-
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const { firstName, lastName, email, phone, passwordHash, dateOfBirth } = req.body;
+    const { firstName, lastName, email, phone, passwordHash, dateOfBirth } =
+      req.body;
 
     const existing = await User.findOne({ email });
     if (existing) {
@@ -138,7 +141,7 @@ export const createUser = async (req: Request, res: Response) => {
 // ============================
 // Get all users
 // ============================
-export const getUsers =async (req: Request, res: Response) =>{
+export const getUsers = async (req: Request, res: Response) => {
   try {
     const users = await User.find().select("-passwordHash"); // exclude password
     res.json(users);
@@ -150,7 +153,7 @@ export const getUsers =async (req: Request, res: Response) =>{
 // ============================
 // Get one user by ID
 // ============================
-export const getUserById = async (req: Request, res: Response) =>{
+export const getUserById = async (req: Request, res: Response) => {
   try {
     const user = await User.findById(req.params.id).select("-passwordHash");
     if (!user) return res.status(404).json({ error: "User not found" });
@@ -163,7 +166,7 @@ export const getUserById = async (req: Request, res: Response) =>{
 // ============================
 // Update user
 // ============================
-export const updateUser = async (req: Request, res: Response) =>{
+export const updateUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -171,7 +174,9 @@ export const updateUser = async (req: Request, res: Response) =>{
     // do not allow direct password update here for security
     delete updates.passwordHash;
 
-    const user = await User.findByIdAndUpdate(id, updates, { new: true }).select("-passwordHash");
+    const user = await User.findByIdAndUpdate(id, updates, {
+      new: true,
+    }).select("-passwordHash");
     if (!user) return res.status(404).json({ error: "User not found" });
 
     res.json(user);
@@ -183,7 +188,7 @@ export const updateUser = async (req: Request, res: Response) =>{
 // ============================
 // Delete user
 // ============================
-export const deleteUser = async (req: Request, res: Response) =>{
+export const deleteUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const user = await User.findByIdAndDelete(id);
@@ -203,14 +208,25 @@ export const addFamilyMember = async (req: Request, res: Response) => {
     const membersData = req.body; // expect an array of family members
 
     if (!Array.isArray(membersData)) {
-      return res.status(400).json({ error: "Request body must be an array of family members" });
+      return res
+        .status(400)
+        .json({ error: "Request body must be an array of family members" });
     }
 
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
+    const encryptedMembers = membersData.map((member) => ({
+      name: encrypt(member.name),
+      relationship: encrypt(member.relationship),
+      age: encrypt(member.age.toString()),
+      gender: encrypt(member.gender.toString()),
+      email: encrypt(member.email),
+      needs: encrypt(JSON.stringify(member.needs || [])),
+      isPrimaryContact: member.isPrimaryContact,
+    }));
     // add multiple members at once
-    user.family.push(...membersData);
+    user.family.push(...encryptedMembers);
     await user.save();
 
     res.status(201).json(user.family); // return newly added members
@@ -219,7 +235,6 @@ export const addFamilyMember = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Server error" });
   }
 };
-
 
 // ============================
 // Update a family member
@@ -233,7 +248,8 @@ export const updateFamilyMember = async (req: Request, res: Response) => {
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const member = user.family.id(memberId);
-    if (!member) return res.status(404).json({ error: "Family member not found" });
+    if (!member)
+      return res.status(404).json({ error: "Family member not found" });
 
     Object.assign(member, updates);
     await user.save();
@@ -255,7 +271,8 @@ export const deleteFamilyMember = async (req: Request, res: Response) => {
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const member = user.family.id(memberId);
-    if (!member) return res.status(404).json({ error: "Family member not found" });
+    if (!member)
+      return res.status(404).json({ error: "Family member not found" });
 
     user.family.pull({ _id: memberId });
     await user.save();
@@ -263,5 +280,53 @@ export const deleteFamilyMember = async (req: Request, res: Response) => {
     res.json({ message: "Family member deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
+  }
+};
+
+export const getFamilyMembersByUserId = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    if (!Array.isArray(user.family)) return res.json({ family: [] });
+
+    const decryptedFamily: FamilyMember[] = user.family.map((member: any) => ({
+      _id: member?._id?.toString(),
+
+      name: safeDecrypt(member.name),
+      gender: safeDecrypt(member.gender),
+      relation: safeDecrypt(member.relationship),
+
+      // age: if decrypted value is number string → convert
+      age:
+        member?.age && typeof member.age === "string"
+          ? Number(safeDecrypt(member.age))
+          : undefined,
+
+      email: safeDecrypt(member.email),
+
+      needs: Array.isArray(member.needs)
+        ? member.needs
+            .map((n: any) => safeDecrypt(n))
+            .map((n: any) => {
+              try {
+                const parsed = JSON.parse(n);
+                if (Array.isArray(parsed)) return parsed[0];
+                return n;
+              } catch {
+                return n;
+              }
+            })
+        : [],
+
+      isPrimaryContact: member?.isPrimaryContact || false,
+    }));
+
+    return res.json({ family: decryptedFamily });
+  } catch (err: any) {
+    console.error("FAMILY API ERROR:", err.message, err);
+    return res.status(500).json({ error: "Server error" });
   }
 };
