@@ -3,18 +3,9 @@ import jwt from "jsonwebtoken";
 import User from "../models/User";
 import { Request, Response } from "express";
 import { generateFamilyId } from "../utils/generateFamilyId";
-import { decrypt, encrypt } from "../utils/crypto";
+import { decrypt, encrypt, safeDecrypt } from "../utils/crypto";
+import { FamilyMember } from "../types/user";
 
-export interface FamilyMember {
-  _id?: string; // MongoDB ID
-  name: string;
-  relation: "wife" | "husband" | "son" | "daughter" | "other" | any;
-  age?: number; // ISO date string
-  email?: string;
-  phone?: string;
-  needs?: string[]; // e.g. ["learning-impairment"]
-  isPrimaryContact?: boolean;
-}
 // ============================
 // Create a new user
 // ============================
@@ -289,17 +280,6 @@ export const deleteFamilyMember = async (req: Request, res: Response) => {
     res.json({ message: "Family member deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
-  }
-};
-
-const safeDecrypt = (value: any) => {
-  if (!value) return "";
-  if (typeof value !== "string") return ""; // prevent crash
-  try {
-    return decrypt(value);
-  } catch (err) {
-    console.error("Decryption failed for value:", value);
-    return "";
   }
 };
 

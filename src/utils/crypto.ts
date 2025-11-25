@@ -34,3 +34,14 @@ export const decrypt = (encryptedString: string) => {
 
   return JSON.parse(decrypted);
 };
+
+export const safeDecrypt = (value: any) => {
+  if (!value) return "";
+  if (typeof value !== "string") return ""; // prevent crash
+  try {
+    return decrypt(value);
+  } catch (err) {
+    console.error("Decryption failed for value:", value);
+    return "";
+  }
+};
